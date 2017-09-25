@@ -20,7 +20,7 @@ Not really, to improve following points would be needed
 - Provide event source like apigateway or dynamodb, etc.
 - better sharding for the indice
 - move lambda deployment to s3 (more reliable)
-- for lambda deployment use alias or tags
+- for lambda deployment use alias or tags   
 
 # How to run
 
@@ -37,8 +37,9 @@ Then from project root folder run
 
 To fire off the events:
 ```
-aws lambda invoke
-
+aws lambda invoke --function-name json-event-handler --invocation-type Event --payload file://lambda/event.json /tmp/event.log
+aws lambda invoke --function-name json-event-handler --invocation-type Event --payload file://lambda/event2.json /tmp/event.log
+aws lambda invoke --function-name json-event-handler --invocation-type Event --payload file://lambda/event3.json /tmp/event.log
 ```
 
 # Local dev

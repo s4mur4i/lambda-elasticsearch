@@ -24,17 +24,15 @@ es = Elasticsearch(
 
 def index_managment():
     logging.debug("Checking if index needs to be created")
-    if es.indices.exists('age', ignore=400):
-        logging.debug("Indice for age exists")
-    else:
-        request_body = {
-            "settings": {
-                "number_of_shards": 1,
-                "number_of_replicas": 0
-            }
+    request_body = {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0
         }
-        res = es.indices.create(index='age', body=request_body)
-        logging.debug("response: %s" % res)
+    }
+    # FIXME detect better indice creation
+    res = es.indices.create(index='age', body=request_body, ignore=400)
+    logging.debug("response: %s" % res)
 
 
 def event_to_document(event):

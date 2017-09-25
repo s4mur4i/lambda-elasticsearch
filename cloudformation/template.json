@@ -43,6 +43,15 @@
               "Version": "2012-10-17",
               "Statement": [
                 {
+                  "Sid": "LambdaLogCreation",
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Sid": "ESPermission",
                   "Effect": "Allow",
                   "Action": [
                     "es:*"
@@ -124,18 +133,7 @@
             {
               "Effect": "Allow",
               "Principal": {
-                "AWS": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "arn:aws:iam::",
-                      {
-                        "Ref": "AWS::AccountId"
-                      },
-                      ":root"
-                    ]
-                  ]
-                }
+                "AWS": "*"
               },
               "Action": "es:*",
               "Resource": {
