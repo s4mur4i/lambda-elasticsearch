@@ -1,0 +1,170 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS CloudFormation Template",
+  "Parameters": {
+    "Loglevel": {
+      "Description": "Loglevel for lambda",
+      "Type": "String",
+      "Default": "DEBUG"
+    },
+    "Region": {
+      "Description": "Region to use",
+      "Type": "String",
+      "Default": "us-east-1"
+    }
+  },
+  "Resources": {
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "lambda-elasticsearch",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Lambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Environment": {
+          "Variables": {
+            "ES_HOST": {
+              "Fn::GetAtt": [
+                "ElasticsearchDomain",
+                "DomainEndpoint"
+              ]
+            },
+            "LOGLEVEL": {
+              "Ref": "Loglevel"
+            },
+            "REGION": {
+              "Ref": "Region"
+            }
+          }
+        },
+        "Handler": "service.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "\n",
+              [
+                "exports.handler = function(event, context) {",
+                "  console.log('hello world!');",
+                "};"
+              ]
+            ]
+          }
+        },
+        "Runtime": "python2.7",
+        "FunctionName": "json-event-handler"
+      }
+    },
+    "ElasticsearchDomain": {
+      "Type": "AWS::Elasticsearch::Domain",
+      "Properties": {
+        "DomainName": "json-event",
+        "ElasticsearchClusterConfig": {
+          "DedicatedMasterEnabled": "true",
+          "InstanceCount": "2",
+          "ZoneAwarenessEnabled": "true",
+          "InstanceType": "m3.medium.elasticsearch",
+          "DedicatedMasterType": "m3.medium.elasticsearch",
+          "DedicatedMasterCount": "3"
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "Iops": 0,
+          "VolumeSize": 20,
+          "VolumeType": "gp2"
+        },
+        "SnapshotOptions": {
+          "AutomatedSnapshotStartHour": "0"
+        },
+        "AccessPolicies": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:iam::",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":root"
+                    ]
+                  ]
+                }
+              },
+              "Action": "es:*",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:es:us-east-2:",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":domain/json-event/*"
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "AdvancedOptions": {
+          "rest.action.multi.allow_explicit_index": "true"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "InstanceId": {
+      "Description": "Elasticsearch Domain",
+      "Value": {
+        "Ref": "ElasticsearchDomain"
+      }
+    }
+  }
+}
